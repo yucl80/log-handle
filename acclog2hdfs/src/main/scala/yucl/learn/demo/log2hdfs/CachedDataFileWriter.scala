@@ -86,7 +86,6 @@ object CachedDataFileWriter {
         val dFSOutputStream = fsDataOutputStream.asInstanceOf[DFSOutputStream]
         dFSOutputStream.hsync(util.EnumSet.of(SyncFlag.UPDATE_LENGTH))
         cachedWriterEntity.needSyncDFS = false
-        syncDFS(cachedWriterEntity)
       }
     }
   }
