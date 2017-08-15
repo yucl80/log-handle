@@ -11,6 +11,7 @@
         <module>log2file</module>
         <module>log2redis</module>
         <module>logstream2hdfs</module>
+        <module>log2hdfs</module>
     </modules>
     <packaging>pom</packaging>
 
