@@ -7,10 +7,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>log2hdfs</artifactId>
+    <artifactId>acclog2hdfs</artifactId>
     <packaging>jar</packaging>
 
-    <name>log2hdfs</name>
+    <name>acclog2hdfs</name>
     <url>http://maven.apache.org</url>
 
 
