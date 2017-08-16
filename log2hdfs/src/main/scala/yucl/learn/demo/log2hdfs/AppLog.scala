@@ -5,6 +5,7 @@ import java.util.regex.Pattern
 
 import com.jayway.jsonpath.JsonPath
 import org.apache.hadoop.conf.Configuration
+import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.kafka.KafkaUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
@@ -23,6 +24,7 @@ object AppLog {
     val sparkConf = new SparkConf()
      // .setMaster("local[8]").setAppName("log2hdfs")
       .set("spark.streaming.stopGracefullyOnShutdown", "true")
+      .set("spark.streaming.backpressure.enabled", "true")
 
     val WINDOW_SIZE = Seconds(1)
     val sparkContext = new SparkContext(sparkConf)
@@ -30,8 +32,9 @@ object AppLog {
     val pattern: Pattern = Pattern.compile("^\\[\\d{2}/\\d{2} ")
     val fullDatePattern: Pattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}) ")
     val kafkaStreams = (1 to kafkaStreamCount.toInt).map { _ =>
+
       KafkaUtils.createStream(
-        streamingContext, kafkaZkUrl, sparkConf.get("name", "log2hdfs"), Map(topic -> kafkaConsumerThreadCount.toInt))
+        streamingContext, kafkaZkUrl, sparkConf.get("name", "log2hdfs"), Map(topic -> kafkaConsumerThreadCount.toInt),StorageLevel.MEMORY_AND_DISK_SER )
     }
     kafkaStreams.toStream.foreach(unifiedStream => {
       val logStream = unifiedStream
