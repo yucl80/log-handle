@@ -10,14 +10,14 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.slf4j.{Logger, LoggerFactory}
 
-object Main {
-  val logger: Logger = LoggerFactory.getLogger(Main.getClass)
+object AppLog {
+  val logger: Logger = LoggerFactory.getLogger(AppLog.getClass)
 
 
   def main(args: Array[String]) {
-    //val List(kafkaZkUrl, topic, kafkaConsumerThreadCount, kafkaStreamCount, outputPath) = args.toList
-    val List(kafkaZkUrl, topic, kafkaConsumerThreadCount, kafkaStreamCount, outputPath) =
-      List("10.62.14.27:2181,10.62.14.10:2181,10.62.14.28:2181", "applog", "10", "4", "hdfs://10.62.14.46:9000/tmp/applog")
+    val List(kafkaZkUrl, topic, kafkaConsumerThreadCount, kafkaStreamCount, outputPath) = args.toList
+    //val List(kafkaZkUrl, topic, kafkaConsumerThreadCount, kafkaStreamCount, outputPath) =
+      //List("10.62.14.27:2181,10.62.14.10:2181,10.62.14.28:2181", "applog", "10", "4", "hdfs://10.62.14.46:9000/tmp/applog")
 
     val partitionKeys = List("year", "month", "stack", "service")
     val sparkConf = new SparkConf()
@@ -55,7 +55,7 @@ object Main {
             var fileName = rawPath.substring(rawPath.lastIndexOf('/') + 1)
             if (!fullDatePattern.matcher(fileName).find) fileName = fileName + "." + date
 
-            val filePath = new StringBuilder().append(outputPath)
+            val filePath = new StringBuilder().append(outputPath).append("/")
               .append("year=").append(date.substring(0, 4)).append("/")
               .append("month=").append(date.substring(5, 7)).append("/")
               .append("stack=").append(json.read("$.stack", classOf[String])).append("/")
