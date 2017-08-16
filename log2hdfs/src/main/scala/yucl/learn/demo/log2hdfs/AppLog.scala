@@ -21,7 +21,7 @@ object AppLog {
 
     val partitionKeys = List("year", "month", "stack", "service")
     val sparkConf = new SparkConf()
-      .setMaster("local[8]").setAppName("log2hdfs")
+     // .setMaster("local[8]").setAppName("log2hdfs")
       .set("spark.streaming.stopGracefullyOnShutdown", "true")
 
     val WINDOW_SIZE = Seconds(1)
@@ -41,30 +41,34 @@ object AppLog {
         rdd.foreachPartition(partition => {
           val conf = new Configuration()
           partition.foreach(json => {
-            val rawMsg = json.read("$.message", classOf[String])
-            var date = ""
-            val matcher = fullDatePattern.matcher(rawMsg)
-            if (matcher.find) date = matcher.group(1)
-            else if (pattern.matcher(rawMsg).find) {
-              val year = String.valueOf(Calendar.getInstance.get(Calendar.YEAR))
-              val eventTime = year + "-" + rawMsg.substring(1, 6)
-              date = eventTime.replaceAll("/", "-")
+            try {
+              val rawMsg = json.read("$.message", classOf[String])
+              var date = ""
+              val matcher = fullDatePattern.matcher(rawMsg)
+              if (matcher.find) date = matcher.group(1)
+              else if (pattern.matcher(rawMsg).find) {
+                val year = String.valueOf(Calendar.getInstance.get(Calendar.YEAR))
+                val eventTime = year + "-" + rawMsg.substring(1, 6)
+                date = eventTime.replaceAll("/", "-")
+              }
+              val rawPath = json.read("$.path", classOf[String])
+
+              var fileName = rawPath.substring(rawPath.lastIndexOf('/') + 1)
+              if (!fullDatePattern.matcher(fileName).find) fileName = fileName + "." + date
+
+              val filePath = new StringBuilder().append(outputPath).append("/")
+                .append("year=").append(date.substring(0, 4)).append("/")
+                .append("month=").append(date.substring(5, 7)).append("/")
+                .append("stack=").append(json.read("$.stack", classOf[String])).append("/")
+                .append("service=").append(json.read("$.service", classOf[String])).append("/")
+                .append(json.read("$.service", classOf[String])).append("-").append(json.read("$.index", classOf[String]))
+                .append(".").append(fileName).toString
+              CachedDataFileWriter.write(rawMsg, filePath, conf)
+            }catch{
+              case e: Throwable => logger.error(json.read("$.message", classOf[String]), e)
             }
-            val rawPath = json.read("$.path", classOf[String])
-
-            var fileName = rawPath.substring(rawPath.lastIndexOf('/') + 1)
-            if (!fullDatePattern.matcher(fileName).find) fileName = fileName + "." + date
-
-            val filePath = new StringBuilder().append(outputPath).append("/")
-              .append("year=").append(date.substring(0, 4)).append("/")
-              .append("month=").append(date.substring(5, 7)).append("/")
-              .append("stack=").append(json.read("$.stack", classOf[String])).append("/")
-              .append("service=").append(json.read("$.service", classOf[String])).append("/")
-              .append(json.read("$.service", classOf[String])).append("-").append(json.read("$.index", classOf[String]))
-              .append(".").append(fileName).toString
-            CachedDataFileWriter.write(rawMsg, filePath, conf)
-
           })
+
         })
       })
 

@@ -21,7 +21,7 @@ object ConsoleLog {
 
     val partitionKeys = List("year", "month", "stack", "service")
     val sparkConf = new SparkConf()
-      .setMaster("local[8]").setAppName("log2hdfs")
+      //.setMaster("local[8]").setAppName("log2hdfs")
       .set("spark.streaming.stopGracefullyOnShutdown", "true")
     val dockerLogTimePattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})")
     val WINDOW_SIZE = Seconds(1)
@@ -41,31 +41,35 @@ object ConsoleLog {
         rdd.foreachPartition(partition => {
           val conf = new Configuration()
           partition.foreach(json => {
-            val rawMsg = json.read("$.message", classOf[String])
-            val jsonContext = JsonPath.parse(rawMsg)
-            val time = jsonContext.read("$.time", classOf[String])
-            val matcher = dockerLogTimePattern.matcher(time)
-            var date: Date = null
-            if (matcher.find) {
-              val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss z")
-              try
-                date = sdf.parse(matcher.group(1) + " UTC")
-              catch {
-                case e: ParseException =>
-                  throw new RuntimeException(e)
+            try {
+              val rawMsg = json.read("$.message", classOf[String])
+              val jsonContext = JsonPath.parse(rawMsg)
+              val time = jsonContext.read("$.time", classOf[String])
+              val matcher = dockerLogTimePattern.matcher(time)
+              var date: Date = null
+              if (matcher.find) {
+                val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss z")
+                try
+                  date = sdf.parse(matcher.group(1) + " UTC")
+                catch {
+                  case e: ParseException =>
+                    throw new RuntimeException(e)
+                }
               }
-            }
-            if (date == null) date = new Date
-            val dateStr = new SimpleDateFormat("yyyy-MM-dd").format(date)
-            if (!json.read("$.stack", classOf[String]).isEmpty) {
-              val filePath = new StringBuilder().append(outputPath).append("/")
-                .append("year=").append(dateStr.substring(0, 4)).append("/")
-                .append("month=").append(dateStr.substring(5, 7)).append("/")
-                .append("stack=").append(json.read("$.stack", classOf[String])).append("/")
-                .append("service=").append(json.read("$.service", classOf[String])).append("/")
-                .append(json.read("$.service", classOf[String])).append("-").append(json.read("$.index", classOf[String]))
-                .append(".").append("console.out").append(".").append(dateStr).toString
-              CachedDataFileWriter.write(rawMsg, filePath, conf)
+              if (date == null) date = new Date
+              val dateStr = new SimpleDateFormat("yyyy-MM-dd").format(date)
+              if (!json.read("$.stack", classOf[String]).isEmpty) {
+                val filePath = new StringBuilder().append(outputPath).append("/")
+                  .append("year=").append(dateStr.substring(0, 4)).append("/")
+                  .append("month=").append(dateStr.substring(5, 7)).append("/")
+                  .append("stack=").append(json.read("$.stack", classOf[String])).append("/")
+                  .append("service=").append(json.read("$.service", classOf[String])).append("/")
+                  .append(json.read("$.service", classOf[String])).append("-").append(json.read("$.index", classOf[String]))
+                  .append(".").append("console.out").append(".").append(dateStr).toString
+                CachedDataFileWriter.write(rawMsg, filePath, conf)
+              }
+            } catch {
+              case e: Throwable => logger.error(json.read("$.message", classOf[String]), e)
             }
           })
         })
