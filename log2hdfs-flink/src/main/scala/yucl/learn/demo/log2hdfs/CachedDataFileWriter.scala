@@ -6,24 +6,25 @@ import java.util.UUID
 import java.util.concurrent._
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import org.apache.avro.Schema
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FSDataOutputStream, Path}
 import org.apache.hadoop.hdfs.DFSOutputStream
 import org.apache.hadoop.hdfs.client.HdfsDataOutputStream.SyncFlag
 import org.slf4j.{Logger, LoggerFactory}
+import yucl.learn.demo.log2hdfs.CachedWriterEntity
 
 import scala.collection.concurrent.TrieMap
 
 object CachedDataFileWriter {
   val logger: Logger = LoggerFactory.getLogger(CachedDataFileWriter.getClass)
-  val fileName: String = UUID.randomUUID().toString.substring(0,4)
+  val fileName: String = UUID.randomUUID().toString
+  val conf = new Configuration()
   private val fileCache: TrieMap[String, CachedWriterEntity] = new TrieMap[String, CachedWriterEntity]
   val scheduledExecutorService: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setDaemon(true).build())
-  var schema: Schema = null
 
-  def write(rawLog: String, fileFullName:String, configuration: Configuration): Unit = {
-    val cacheWriterEntity = getDataFileWriter(fileFullName+ "."+ fileName, schema, configuration)
+
+  def write(rawLog: String, fileFullName:String): Unit = {
+    val cacheWriterEntity = getDataFileWriter(fileFullName+ "."+ fileName)
     cacheWriterEntity.synchronized {
       val dataFileWriter = cacheWriterEntity.dataFileWriter
       dataFileWriter.write(rawLog+"\n")
@@ -32,7 +33,7 @@ object CachedDataFileWriter {
     }
   }
 
-  def getDataFileWriter(fileName: String, schema: Schema, conf: Configuration): CachedWriterEntity = {
+  def getDataFileWriter(fileName: String): CachedWriterEntity = {
     fileCache.synchronized {
       var cacheWriterEntity: CachedWriterEntity = fileCache.getOrElse(fileName, null)
       if (cacheWriterEntity == null) {
