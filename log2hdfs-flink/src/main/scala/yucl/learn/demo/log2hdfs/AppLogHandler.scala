@@ -61,12 +61,11 @@ object AppLogHandler {
         }
       }
     })
-
     try {
       env.execute("applog2hdfs")
     } catch {
-      case t: Throwable =>
-        logger.error(t.getLocalizedMessage, t)
+      case e: Exception =>logger.error(e.getMessage, e)
+
     }
 
   }
