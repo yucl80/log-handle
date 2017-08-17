@@ -16,14 +16,16 @@ object ConsoleLogHandler {
   val logger: Logger = LoggerFactory.getLogger(ConsoleLogHandler.getClass)
 
   def main(args: Array[String]) {
-    //val List(kafkaZkUrl, topic, kafkaConsumerThreadCount, kafkaStreamCount, outputPath) = args.toList
-    val List(kafkaZkUrl: String, topic, kafkaConsumerThreadCount, kafkaStreamCount, outputPath) =
-      List("10.62.14.27:2181,10.62.14.10:2181,10.62.14.28:2181", "containerlog", "10", "4", "hdfs://10.62.14.46:9000/tmp/containerlog1")
+    val List(bootstrap, topic, consumerGroup, outputPath,kafkaZkUrl) = args.toList
+    //val List(bootstrap, topic, consumerGroup, outputPath,kafkaZkUrl) =
+    // List("10.62.14.25:9092","containerlog","test","hdfs://10.62.14.46:9000/tmp/applog1","10.62.14.27:2181,10.62.14.10:2181,10.62.14.28:2181")
     val properties = new Properties
-    properties.setProperty("bootstrap.servers", "10.62.14.25:9092")
+    properties.setProperty("bootstrap.servers", bootstrap)
     // only required for Kafka 0.8
-    properties.setProperty("zookeeper.connect", kafkaZkUrl)
-    properties.setProperty("group.id", "test")
+    if(!kafkaZkUrl.isEmpty){
+      properties.setProperty("zookeeper.connect", kafkaZkUrl)
+    }
+    properties.setProperty("group.id", consumerGroup)
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     val kafkaConsumer = new FlinkKafkaConsumer08[String](topic, new SimpleStringSchema, properties)
     val stream = env.addSource(kafkaConsumer)
