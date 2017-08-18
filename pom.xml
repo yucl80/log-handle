@@ -10,8 +10,8 @@
         <module>acclog-stream-handle</module>
         <module>log2file</module>
         <module>log2redis</module>
-        <module>logstream2hdfs</module>
-        <module>log2hdfs</module>
+        <module>log2hdfs-spark</module>
+        <module>log2hdfs-flink</module>
     </modules>
     <packaging>pom</packaging>
 
