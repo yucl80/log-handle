@@ -44,12 +44,12 @@ object AccLogSaver {
 
     accLogs.foreachRDD(rdd => {
       rdd.foreachPartition(partition => {
-        var schema = CachedDataFileWriter.schema
+        var schema = CachedAvroFileWriter.schema
         if (schema == null) {
           val schemaInputStream = Thread.currentThread.getContextClassLoader.getResourceAsStream("acclog.avsc")
-          CachedDataFileWriter.schema = new Schema.Parser().parse(schemaInputStream)
+          CachedAvroFileWriter.schema = new Schema.Parser().parse(schemaInputStream)
           schemaInputStream.close()
-          schema = CachedDataFileWriter.schema
+          schema = CachedAvroFileWriter.schema
         }
         val conf = new Configuration()
         val fields = List("service", "instance", "@timestamp", "uri", "query", "time", "bytes", "response", "verb", "path", "sessionid", "auth", "agent", "host", "ip", "clientip", "xforwardedfor", "thread", "uidcookie", "referrer", "message","stack")
@@ -98,7 +98,7 @@ object AccLogSaver {
             record.put(fields(20), log.getOrElse(fields(20), "").asInstanceOf[String])
             record.put(fields(21), log.getOrElse(fields(21), "").asInstanceOf[String])
             logger.debug(record.toString)
-            CachedDataFileWriter.write(record, partitionKeys, outputPath, schema, conf)
+            CachedAvroFileWriter.write(record, partitionKeys, outputPath, schema, conf)
           } catch {
             case e: Throwable => logger.error(log.toString(), e)
           }

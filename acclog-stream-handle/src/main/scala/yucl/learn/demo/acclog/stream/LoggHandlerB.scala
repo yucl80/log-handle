@@ -13,7 +13,7 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.streaming.api.{CheckpointingMode, TimeCharacteristic}
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer08
+import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer010}
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema
 import org.apache.flink.util.Collector
 
@@ -29,14 +29,14 @@ object LoggHandlerB {
 
   def main(args: Array[String]) {
     val properties = new Properties
-    properties.setProperty("bootstrap.servers", "192.168.21.27:9092")
-    properties.setProperty("zookeeper.connect", "192.168.21.12:2181,192.168.21.13:2181,192.168.21.14:2181")
-    properties.setProperty("group.id", "key-words-alert")
+    properties.setProperty("bootstrap.servers", "10.62.14.49:9092")
+    //properties.setProperty("zookeeper.connect", "192.168.21.12:2181,192.168.21.13:2181,192.168.21.14:2181")
+    properties.setProperty("group.id", "test")
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
     env.enableCheckpointing(10000, CheckpointingMode.AT_LEAST_ONCE)
 
-    val stream: DataStream[String] = env.addSource(new FlinkKafkaConsumer08[String]("parsed-acclog", new SimpleStringSchema, properties))
+    val stream: DataStream[String] = env.addSource(new FlinkKafkaConsumer010[String]("parsed-acclog", new SimpleStringSchema, properties))
     val data = stream.map(new MapFunction[String, AccLog] {
       override def map(value: String): AccLog = {
         try {
@@ -49,9 +49,9 @@ object LoggHandlerB {
             j.getOrElse("system", "").asInstanceOf[String],
             j.getOrElse("sessionid", "").asInstanceOf[String],
             j.getOrElse("clientip", "").asInstanceOf[String],
-            j.getOrElse("response", 0d).asInstanceOf[Double],
-            j.getOrElse("bytes", 0d).asInstanceOf[Double],
-            j.getOrElse("time", 0d).asInstanceOf[Double],
+            j.getOrElse("response", 0d).asInstanceOf[Int],
+            j.getOrElse("bytes", 0d).asInstanceOf[Int],
+            j.getOrElse("time", 0d).asInstanceOf[Int],
             timestamp,
             1,
             j.getOrElse("uri", "").asInstanceOf[String]

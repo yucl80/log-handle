@@ -33,6 +33,8 @@
         <slf4j.version>1.7.7</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
         <scala.binary.version>2.11</scala.binary.version>
+        <kafka.version>0.10</kafka.version>
+        <avro.version>1.8.2</avro.version>
     </properties>
 
     <dependencies>
@@ -59,7 +61,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-kafka-0.8_${scala.binary.version}</artifactId>
+            <artifactId>flink-connector-kafka-${kafka.version}_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
         </dependency>
 
@@ -74,6 +76,17 @@
             <artifactId>flink-cep-scala_${scala.binary.version}</artifactId>
             <version>1.3.0</version>
         </dependency>-->
+
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>${avro.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro-mapred</artifactId>
+            <version>${avro.version}</version>
+        </dependency>
 
         <!-- explicitly add a standard loggin framework, as Flink does not (in the future) have
             a hard dependency on one specific framework by default -->
@@ -118,7 +131,7 @@
 
                 <dependency>
                     <groupId>org.apache.flink</groupId>
-                    <artifactId>flink-connector-kafka-0.8_${scala.binary.version}</artifactId>
+                    <artifactId>flink-connector-kafka-${kafka.version}_${scala.binary.version}</artifactId>
                     <version>${flink.version}</version>
                 </dependency>
                 <dependency>

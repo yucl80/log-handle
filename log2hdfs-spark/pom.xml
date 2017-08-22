@@ -20,6 +20,7 @@
         <scala.version>2.11.11</scala.version>
         <spark.version>2.2.0</spark.version>
         <hadoop.version>2.6.5</hadoop.version>
+        <kafka.version>0-8</kafka.version>
     </properties>
 
     <dependencies>
@@ -78,9 +79,19 @@
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming-kafka-0-8_${scala.tools.version}</artifactId>
+            <artifactId>spark-streaming-kafka-${kafka.version}_${scala.tools.version}</artifactId>
             <version>${spark.version}</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.databricks</groupId>
+            <artifactId>spark-avro_${scala.tools.version}</artifactId>
+            <version>2.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.8.1</version>
         </dependency>
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>

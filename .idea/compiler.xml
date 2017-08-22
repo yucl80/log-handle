@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <option name="BUILD_PROCESS_HEAP_SIZE" value="1024" />
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="acclog-stream-handle" />
+        <module name="acclog2hdfs" />
+        <module name="log2file" />
+        <module name="log2hdfs" />
+        <module name="log2hdfs-flink" />
+        <module name="log2hdfs-spark" />
+        <module name="log2redis" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="acclog-stream-handle" target="1.7" />
+      <module name="acclog2hdfs" target="1.8" />
+      <module name="log-handle" target="1.8" />
+      <module name="log2file" target="1.8" />
+      <module name="log2hdfs" target="1.8" />
+      <module name="log2hdfs-flink" target="1.7" />
+      <module name="log2hdfs-spark" target="1.8" />
+      <module name="log2redis" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

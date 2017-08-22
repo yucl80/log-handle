@@ -18,6 +18,8 @@ package yucl.learn.demo.acclog.stream
  * limitations under the License.
  */
 
+import java.net.{InetAddress, InetSocketAddress}
+
 import org.apache.flink.api.scala._
 
 /**
@@ -48,6 +50,17 @@ object WordCount {
 
     // execute and print result
     counts.print()
+
+    val config = new java.util.HashMap[String, String]
+    config.put("cluster.name", "my-cluster-name")
+    // This instructs the sink to emit after every element, otherwise they would be buffered
+    config.put("bulk.flush.max.actions", "1")
+
+    val transportAddresses = new java.util.ArrayList[InetSocketAddress]
+    transportAddresses.add(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 9300))
+    transportAddresses.add(new InetSocketAddress(InetAddress.getByName("10.2.3.1"), 9300))
+
+
 
   }
 }

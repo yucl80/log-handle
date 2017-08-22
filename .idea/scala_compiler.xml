@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ScalaCompilerConfiguration">
+    <profile name="Maven 1" modules="acclog2hdfs">
+      <parameters>
+        <parameter value="-dependencyfile" />
+        <parameter value="D:\workspaces\java_workspace\log-handle3\acclog2hdfs\target/.scala_dependencies" />
+      </parameters>
+    </profile>
+    <profile name="Maven 2" modules="log2hdfs-flink,acclog-stream-handle" />
+    <profile name="Maven 3" modules="log2hdfs,log2hdfs-spark">
+      <parameters>
+        <parameter value="-dependencyfile" />
+        <parameter value="D:\workspaces\java_workspace\log-handle3\log2hdfs-spark\target/.scala_dependencies" />
+      </parameters>
+    </profile>
+  </component>
+</project>

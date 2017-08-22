@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/acclog-stream-handle/acclog-stream-handle.iml" filepath="$PROJECT_DIR$/acclog-stream-handle/acclog-stream-handle.iml" />
+      <module fileurl="file://$PROJECT_DIR$/acclog2hdfs/acclog2hdfs.iml" filepath="$PROJECT_DIR$/acclog2hdfs/acclog2hdfs.iml" />
+      <module fileurl="file://$PROJECT_DIR$/log-handle.iml" filepath="$PROJECT_DIR$/log-handle.iml" />
+      <module fileurl="file://$PROJECT_DIR$/log2file/log2file.iml" filepath="$PROJECT_DIR$/log2file/log2file.iml" />
+      <module fileurl="file://$PROJECT_DIR$/log2hdfs-flink/log2hdfs-flink.iml" filepath="$PROJECT_DIR$/log2hdfs-flink/log2hdfs-flink.iml" />
+      <module fileurl="file://$PROJECT_DIR$/log2hdfs-spark/log2hdfs-spark.iml" filepath="$PROJECT_DIR$/log2hdfs-spark/log2hdfs-spark.iml" />
+      <module fileurl="file://$PROJECT_DIR$/log2redis/log2redis.iml" filepath="$PROJECT_DIR$/log2redis/log2redis.iml" />
+    </modules>
+  </component>
+</project>
