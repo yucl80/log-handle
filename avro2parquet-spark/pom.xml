@@ -7,10 +7,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>acclog2hdfs</artifactId>
+    <artifactId>avro2parquet-spark</artifactId>
     <packaging>jar</packaging>
 
-    <name>acclog2hdfs</name>
+    <name>avro2parquet-spark</name>
     <url>http://maven.apache.org</url>
 
 

@@ -6,7 +6,7 @@
   <artifactId>log-handle</artifactId>
   <version>1.0</version>
     <modules>
-        <module>acclog2hdfs</module>
+        <module>avro2parquet-spark</module>
         <module>acclog-stream-handle</module>
         <module>log2file</module>
         <module>log2redis</module>

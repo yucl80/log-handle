@@ -4,12 +4,18 @@ import java.time.Instant
 import java.util.Properties
 
 import org.apache.flink.api.common.functions.MapFunction
+import org.apache.flink.api.java.tuple.Tuple
 import org.apache.flink.streaming.api.TimeCharacteristic
+import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
+import org.apache.flink.streaming.api.scala.function.WindowFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment, _}
+import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.assigners.EventTimeSessionWindows
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema
+import org.apache.flink.util.Collector
 
 import scala.util.parsing.json.JSON
 
@@ -48,31 +54,38 @@ object HttpSessionCounter {
       }
     }).filter(_.timestamp != 0).filter(_.status == 200)
 
-    val time = data.assignAscendingTimestamps(_.timestamp)
-      .keyBy("service")
-      .window(EventTimeSessionWindows.withGap(Time.seconds(10)))
+    val time = data.assignTimestampsAndWatermarks(new WatermarkGenerator)
+      .keyBy("service","sessionid")
+      .window(EventTimeSessionWindows.withGap(Time.seconds(60)))
+      .allowedLateness(Time.seconds(10))
 
-      .sum("time")
-    time.print()
-
-    /*data.keyBy("service")
-      .window(EventTimeSessionWindows.withGap(Time.seconds(10)))
       .apply(new WindowFunction[AccLog,AccLog,Tuple,TimeWindow] {
         override def apply(key: Tuple, window: TimeWindow, input: Iterable[AccLog], out: Collector[AccLog]): Unit = {
-
           input.foreach(x => {
-            out.collect(x)
+            printf("%s-%s: %s ;%s \n",window.getStart,window.getEnd,key,x)
           })
         }
-      }).print()*/
+      })
 
     try {
       //env.setParallelism(2)
-      env.execute("key words alert")
+      env.execute("test")
     } catch {
       case e: Exception =>
         e.printStackTrace()
     }
 
+  }
+
+  class WatermarkGenerator extends AssignerWithPeriodicWatermarks[AccLog] {
+    var ts = Long.MinValue
+    override def getCurrentWatermark: Watermark = {
+      new Watermark(ts)
+    }
+
+    override def extractTimestamp(t: AccLog, l: Long): Long = {
+      ts = Math.max(t.timestamp, l)
+      t.timestamp
+    }
   }
 }
