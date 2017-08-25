@@ -15,10 +15,9 @@ object AppLogHandler {
   val logger: Logger = LoggerFactory.getLogger(AppLogHandler.getClass)
 
   def main(args: Array[String]) {
-    //val List(bootstrap, topic, consumerGroup, outputPath) = args.toList
-    val List(bootstrap, topic, consumerGroup, outputPath) =
-     List("10.62.14.66:9092","applog","test","hdfs://10.62.14.46:9000/tmp/applog1")
-
+    val List(bootstrap, topic, consumerGroup, outputPath) = args.toList
+    //val List(bootstrap, topic, consumerGroup, outputPath) =
+     //List("10.62.14.66:9092","applog","test","hdfs://10.62.14.46:9000/tmp/applog1")
     val properties = new Properties
     properties.setProperty("bootstrap.servers", bootstrap)
     properties.setProperty("group.id", consumerGroup)
@@ -31,7 +30,6 @@ object AppLogHandler {
     logStream.addSink(new SinkFunction[String] {
       override def invoke(msg: String): Unit = {
         try {
-          println(msg)
           val json: Map[String, Any] = JSON.parseFull(msg).get.asInstanceOf[Map[String, Any]]
           val rawMsg = json.getOrElse("message", "").asInstanceOf[String]
           var date = ""
