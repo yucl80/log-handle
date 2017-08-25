@@ -27,7 +27,7 @@ object CachedAvroFileWriter {
   var schema: Schema = null
 
   def write(record: GenericRecord, partitionKeys: List[String], basePath: String, schema: Schema,fileBaseName :String): Unit = {
-    val fileFullName = buildFilePath(record, partitionKeys, basePath) + "/" +fileBaseName+"-"+ fileName + ".avro"
+    val fileFullName = buildFilePath(record, partitionKeys, basePath) + "/" +fileBaseName+"."+ fileName + ".avro"
     val cacheWriterEntity = getDataFileWriter(fileFullName, schema)
     cacheWriterEntity.synchronized {
       val dataFileWriter = cacheWriterEntity.dataFileWriter
