@@ -45,7 +45,7 @@ object AppLogHandler {
           if (!fullDatePattern.matcher(fileName).find) fileName = fileName + "." + date
           val filePath = new StringBuilder().append(outputPath).append("/")
             .append("year=").append(date.substring(0, 4)).append("/")
-            .append("month=").append(date.substring(5, 7)).append("/")
+            .append("month=").append(date.substring(5, 7).toInt).append("/")
             .append("stack=").append(json.getOrElse("stack", "").asInstanceOf[String]).append("/")
             .append("service=").append(json.getOrElse("service", classOf[String])).append("/")
             .append(json.getOrElse("service", "").asInstanceOf[String]).append("-").append(json.getOrElse("index", "").asInstanceOf[String])

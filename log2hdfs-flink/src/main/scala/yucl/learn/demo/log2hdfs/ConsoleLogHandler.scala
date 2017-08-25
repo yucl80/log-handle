@@ -50,7 +50,7 @@ object ConsoleLogHandler {
           if (!json.getOrElse("stack", "").asInstanceOf[String].isEmpty) {
             val filePath = new StringBuilder().append(outputPath).append("/")
               .append("year=").append(dateStr.substring(0, 4)).append("/")
-              .append("month=").append(dateStr.substring(5, 7)).append("/")
+              .append("month=").append(dateStr.substring(5, 7).toInt).append("/")
               .append("stack=").append(json.getOrElse("stack", "").asInstanceOf[String]).append("/")
               .append("service=").append(json.getOrElse("service", "").asInstanceOf[String]).append("/")
               .append(json.getOrElse("service", "").asInstanceOf[String]).append("-").append(json.getOrElse("index", "").asInstanceOf[String])
