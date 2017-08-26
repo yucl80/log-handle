@@ -1,9 +1,7 @@
 package yucl.learn.demo.acclog.stream
 
-import java.text.SimpleDateFormat
 import java.util.Properties
 
-import org.apache.flink.api.common.functions.MapFunction
 import org.apache.flink.api.java.tuple.Tuple
 import org.apache.flink.streaming.api.TimeCharacteristic
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
@@ -14,12 +12,9 @@ import org.apache.flink.streaming.api.watermark.Watermark
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer08
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema
 import org.apache.flink.util.Collector
-
-import scala.collection.immutable.HashMap.HashTrieMap
-import scala.util.parsing.json.JSON
 
 /**
   * Created by YuChunlei on 2017/5/25.
@@ -41,7 +36,7 @@ object AccessLogHandler {
       * 1> {"message":"[26/May/2017:06:31:13 +0800] D93E6C19894D152266329AC52317A9E8 192.168.8.152 - - GET 200 - 1 \"http-20039-50\" \"-\" \"-\" \"/SL_LES/proxyKeepAlive\" \"\" \"-\" \"Jetty/9.2.11.v20150529\"","@timestamp":"2017-05-26T06:31:13.000+08:00","host":"szebpint1","path":"/mwbase/applogs/rtlog/LES_0_INT_2_1_1/localhost.2017-05-26.acc","sessionid":"D93E6C19894D152266329AC52317A9E8","clientip":"192.168.8.152","xforwardedfor":"-","auth":"-","verb":"GET","response":200,"time":1,"thread":"http-20039-50","uidcookie":"-","adcookie":"-","uri":"/SL_LES/proxyKeepAlive","referrer":"-","agent":"Jetty/9.2.11.v20150529","service":"LES","instance":"LES_0_INT_2_1_1","agentinfo":{"name":"Other","os":"Other","os_name":"Other","device":"Other"}}
       * 1> {"message":"[26/May/2017:06:31:09 +0800] 6FCCB889076176370FF9914F12E4F7A2 192.168.8.152 - - GET 200 - 1 \"http-20039-27\" \"-\" \"-\" \"/SL_LES/proxyCheckHealth\" \"\" \"-\" \"Jetty/9.2.11.v20150529\"","@timestamp":"2017-05-26T06:31:09.000+08:00","host":"szebpint1","path":"/mwbase/applogs/rtlog/LES_0_INT_2_1_1/localhost.2017-05-26.acc","sessionid":"6FCCB889076176370FF9914F12E4F7A2","clientip":"192.168.8.152","xforwardedfor":"-","auth":"-","verb":"GET","response":200,"time":1,"thread":"http-20039-27","uidcookie":"-","adcookie":"-","uri":"/SL_LES/proxyCheckHealth","referrer":"-","agent":"Jetty/9.2.11.v20150529","service":"LES","instance":"LES_0_INT_2_1_1","agentinfo":{"name":"Other","os":"Other","os_name":"Other","device":"Other"}}
       */
-    val stream: DataStream[String] = env.addSource(new FlinkKafkaConsumer010[String]("parsed-acclog", new SimpleStringSchema, properties))
+    val stream: DataStream[String] = env.addSource(new FlinkKafkaConsumer08[String]("parsed-acclog", new SimpleStringSchema, properties))
 
     /* val data =  stream.map(new MapFunction[String, (String, String, String, Double, Double, Double)] {
        override def map(value: String): (String, String, String, Double, Double, Double) = {
@@ -88,8 +83,9 @@ object AccessLogHandler {
         .max(5)
         .print()*/
 
+    val data =stream.map(AccLog(_).get)
 
-    val data = stream.map(new MapFunction[String, AccLog] {
+    /*val data = stream.map(new MapFunction[String, AccLog] {
       override def map(value: String): AccLog = {
         try {
           /* val gson = new Gson
@@ -120,7 +116,7 @@ object AccessLogHandler {
             null
         }
       }
-    }).filter(x => x != null)
+    }).filter(x => x != null)*/
 
     val withTimestampsAndWatermarks = data.assignAscendingTimestamps(_.timestamp)
 

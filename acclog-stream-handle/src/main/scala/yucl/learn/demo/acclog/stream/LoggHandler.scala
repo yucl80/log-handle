@@ -1,10 +1,8 @@
 package yucl.learn.demo.acclog.stream
 
 import java.sql.Timestamp
-import java.text.SimpleDateFormat
 import java.util.Properties
 
-import org.apache.flink.api.common.functions.MapFunction
 import org.apache.flink.api.java.tuple.Tuple
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
 import org.apache.flink.streaming.api.scala.function.WindowFunction
@@ -14,13 +12,11 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import org.apache.flink.streaming.api.{CheckpointingMode, TimeCharacteristic}
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
+import org.apache.flink.streaming.connectors.kafka.{ FlinkKafkaConsumer08}
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema
 import org.apache.flink.util.Collector
 
-import scala.collection.immutable.HashMap.HashTrieMap
 import scala.collection.mutable
-import scala.util.parsing.json.JSON
 
 /**
   * Created by YuChunlei on 2017/5/27.
@@ -68,35 +64,8 @@ object LoggHandler {
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
    env.enableCheckpointing(10000,CheckpointingMode.AT_LEAST_ONCE)
 
-    val stream: DataStream[String] = env.addSource(new FlinkKafkaConsumer010[String]("parsed-acclog", new SimpleStringSchema, properties))
-    val data = stream.map(new MapFunction[String, AccLog] {
-      override def map(value: String): AccLog = {
-        try {
-          val json: Option[Any] = JSON.parseFull(value)
-          val j = json.get.asInstanceOf[HashTrieMap[String, Any]]
-          var t = j.getOrElse("@timestamp", 0d).asInstanceOf[String]
-          val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
-          val timestamp = sdf.parse(t).getTime
-          new AccLog(
-            j.getOrElse("system", "").asInstanceOf[String],
-            j.getOrElse("sessionid", "").asInstanceOf[String],
-            j.getOrElse("clientip", "").asInstanceOf[String],
-            j.getOrElse("response", 0d).asInstanceOf[Int],
-            j.getOrElse("bytes", 0d).asInstanceOf[Int],
-            j.getOrElse("time", 0d).asInstanceOf[Int],
-            timestamp,
-            1,
-            j.getOrElse("uri", "").asInstanceOf[String]
-          )
-        } catch {
-          case e: Exception => {
-            println("parse failed: " + value)
-            e.printStackTrace()
-          }
-            null
-        }
-      }
-    }).filter(x => x != null)
+    val stream: DataStream[String] = env.addSource(new FlinkKafkaConsumer08[String]("parsed-acclog", new SimpleStringSchema, properties))
+    val data = stream.map( AccLog(_)).filter(x => x != None).map(_.get)
     val timedData = data.assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks[AccLog] {
       val maxOutOfOrderness = 5000 // 3.5 seconds
       var currentMaxTimestamp = 0L
