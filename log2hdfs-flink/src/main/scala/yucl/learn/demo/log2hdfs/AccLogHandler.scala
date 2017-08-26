@@ -1,6 +1,5 @@
 package yucl.learn.demo.log2hdfs
 
-import java.text.SimpleDateFormat
 import java.time.{Instant, ZoneId}
 import java.util.Properties
 
@@ -28,7 +27,7 @@ object AccLogHandler {
     val kafkaConsumer = new FlinkKafkaConsumer010[String](topic, new SimpleStringSchema, properties)
     val stream = env.addSource(kafkaConsumer)
     val fields = List("service", "instance", "@timestamp", "uri", "query", "time", "bytes", "response", "verb", "path", "sessionid", "auth", "agent", "host", "ip", "clientip", "xforwardedfor", "thread", "uidcookie", "referrer", "message", "stack")
-    val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+
     val accLogs = stream
       .map(parseFull(_))
       .map(_.getOrElse(Map()))
@@ -38,7 +37,6 @@ object AccLogHandler {
 
     accLogs.addSink((log: Map[String,Any])=> {
       try {
-        //val log: Map[String, Any] = JSON.parseFull(msg).get.asInstanceOf[Map[String, Any]]
         var schema = CachedAvroFileWriter.schema
         if (schema == null) {
           val schemaInputStream = Thread.currentThread.getContextClassLoader.getResourceAsStream("acclog.avsc")
@@ -75,7 +73,7 @@ object AccLogHandler {
         }
         record.put(fields.head, log.getOrElse(fields.head, "").asInstanceOf[String])
         record.put(fields(1), log.getOrElse(fields(1), "").asInstanceOf[String])
-        record.put("timestamp", simpleDateFormat.parse(log.getOrElse(fields(2), "").asInstanceOf[String]).getTime)
+        record.put("timestamp", instant.getEpochSecond)
         record.put(fields(3), log.getOrElse(fields(3), "").asInstanceOf[String])
         record.put(fields(4), log.getOrElse(fields(4), "").asInstanceOf[String])
         record.put(fields(5), time)
