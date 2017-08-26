@@ -37,8 +37,8 @@ object LoggHandlerC {
 
     val stream: DataStream[String] = env.addSource(new FlinkKafkaConsumer08[String]("parsed-acclog", new SimpleStringSchema, properties))
     val data = stream.map(AccLog(_)).filter(x => x != None).map(_.get)
-      .filter(_.stack.equals("it-dev-20170810"))
-      .filter(_.service.equalsIgnoreCase("um"))
+      //.filter(_.stack.equals("it-dev-20170810"))
+      //.filter(_.service.equalsIgnoreCase("um"))
 
     val timedData = data.assignTimestampsAndWatermarks(new WG2())
     val keyedStream = timedData.keyBy("stack", "service")
@@ -105,7 +105,7 @@ object LoggHandlerC {
 
   def aggregate(urlSet: mutable.TreeSet[UriTime], x: AccLog): Unit = {
     val topN = 20
-    val vs = urlSet.filter(u => u.uri == x.uri)
+    val vs = urlSet.filter(u => u.uri.equals(x.uri))
     if (vs.size > 0) {
       val f = vs.last
       if (f.time < x.time) {

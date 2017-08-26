@@ -15,7 +15,7 @@ class UriTime(var uri: String, var time: Double) extends Ordered[UriTime] {
   }
 
   def compare(that: UriTime) = {
-    if (this.uri == that.uri)
+    if (this.uri.equals(that.uri))
       0
     else
       this.time.compareTo(that.time)
