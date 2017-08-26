@@ -1,12 +1,11 @@
 package yucl.learn.demo.log2hdfs
 
-import java.text.SimpleDateFormat
+import java.time.{Instant, ZoneId}
 
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, _}
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.streaming.kafka.KafkaUtils
-
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.slf4j.{Logger, LoggerFactory}
@@ -54,13 +53,14 @@ object AccLogHandler {
         }
         val conf = new Configuration()
         val fields = List("service", "instance", "@timestamp", "uri", "query", "time", "bytes", "response", "verb", "path", "sessionid", "auth", "agent", "host", "ip", "clientip", "xforwardedfor", "thread", "uidcookie", "referrer", "message","stack")
-        val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+
         partition.foreach(log => {
           try {
             val record: GenericRecord = new GenericData.Record(schema)
-            val Array(year, month) = log.getOrElse("@timestamp", "").asInstanceOf[String].split("-").slice(0, 2)
-            record.put("year", year.toInt)
-            record.put("month", month.toInt)
+            val instant = Instant.parse(log.getOrElse("@timestamp", "").asInstanceOf[String])
+            val localTime = instant.atZone(ZoneId.of("Asia/Shanghai"))
+            record.put("year", localTime.getYear)
+            record.put("month", localTime.getMonthValue)
             val time = log.getOrElse("time", 0L) match {
               case i: Integer => i.toLong
               case l: Long => l
@@ -78,7 +78,7 @@ object AccLogHandler {
             }
             record.put(fields.head, log.getOrElse(fields.head, "").asInstanceOf[String])
             record.put(fields(1), log.getOrElse(fields(1), "").asInstanceOf[String])
-            record.put("timestamp", simpleDateFormat.parse(log.getOrElse(fields(2), "").asInstanceOf[String]).getTime)
+            record.put("timestamp", instant.getEpochSecond)
             record.put(fields(3), log.getOrElse(fields(3), "").asInstanceOf[String])
             record.put(fields(4), log.getOrElse(fields(4), "").asInstanceOf[String])
             record.put(fields(5), time)
