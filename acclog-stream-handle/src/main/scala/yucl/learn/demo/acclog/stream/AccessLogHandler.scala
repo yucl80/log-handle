@@ -85,38 +85,6 @@ object AccessLogHandler {
 
     val data =stream.map(AccLog(_).get)
 
-    /*val data = stream.map(new MapFunction[String, AccLog] {
-      override def map(value: String): AccLog = {
-        try {
-          /* val gson = new Gson
-           val mapType = new TypeToken[java.util.TreeMap[String, String]] {}.getType
-           val map = gson.fromJson[java.util.TreeMap[String, String]](value, mapType).asScala*/
-          val json: Option[Any] = JSON.parseFull(value)
-          val j = json.get.asInstanceOf[HashTrieMap[String, Any]]
-          var t = j.getOrElse("@timestamp", 0d).asInstanceOf[String]
-          val sdf: SimpleDateFormat = new SimpleDateFormat("yyyy-mm-ddTHH:MI:ss.sss+Z")
-          val timestamp = sdf.parse(t).getTime
-
-          new AccLog(
-            j.getOrElse("service", "").asInstanceOf[String],
-            j.getOrElse("sessionid", "").asInstanceOf[String],
-            j.getOrElse("clientip", "").asInstanceOf[String],
-            j.getOrElse("response", 0d).asInstanceOf[Int],
-            j.getOrElse("bytes", 0d).asInstanceOf[Int],
-            j.getOrElse("time", 0d).asInstanceOf[Int],
-            timestamp,
-            1,
-            j.getOrElse("message", 0d).asInstanceOf[String]
-          )
-        } catch {
-          case e: Exception => {
-            println("parse failed: " + value)
-            e.printStackTrace()
-          }
-            null
-        }
-      }
-    }).filter(x => x != null)*/
 
     val withTimestampsAndWatermarks = data.assignAscendingTimestamps(_.timestamp)
 

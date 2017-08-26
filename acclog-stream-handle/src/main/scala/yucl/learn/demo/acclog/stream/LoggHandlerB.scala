@@ -26,7 +26,7 @@ object LoggHandlerB {
   def main(args: Array[String]) {
     val properties = new Properties
     properties.setProperty("bootstrap.servers", "10.62.14.49:9092")
-    //properties.setProperty("zookeeper.connect", "192.168.21.12:2181,192.168.21.13:2181,192.168.21.14:2181")
+    properties.setProperty("zookeeper.connect", "10.62.14.53:2181,10.62.14.62:2181,10.62.14.64:2181")
     properties.setProperty("group.id", "yucl-test")
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
     env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
