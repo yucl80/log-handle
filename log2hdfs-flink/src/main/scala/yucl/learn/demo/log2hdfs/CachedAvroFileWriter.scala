@@ -1,5 +1,6 @@
 package yucl.learn.demo.log2hdfs
 
+import java.io.IOException
 import java.util
 import java.util.UUID
 import java.util.concurrent._
@@ -20,24 +21,31 @@ import scala.collection.concurrent.TrieMap
 
 object CachedAvroFileWriter {
   val logger: Logger = LoggerFactory.getLogger(CachedAvroFileWriter.getClass)
-  val fileName: String = UUID.randomUUID().toString
+  val fileNameUUID: String = UUID.randomUUID().toString
   val conf = new Configuration()
   private val fileCache: TrieMap[String, CachedAvroWriterEntity] = new TrieMap[String, CachedAvroWriterEntity]
   val scheduledExecutorService: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setDaemon(true).build())
   var schema: Schema = null
 
-  def write(record: GenericRecord, partitionKeys: List[String], basePath: String, schema: Schema,fileBaseName :String): Unit = {
-    val fileFullName = buildFilePath(record, partitionKeys, basePath) + "/" +fileBaseName+"."+ fileName + ".avro"
-    val cacheWriterEntity = getDataFileWriter(fileFullName, schema)
-    cacheWriterEntity.synchronized {
-      val dataFileWriter = cacheWriterEntity.dataFileWriter
-      dataFileWriter.append(record)
-      cacheWriterEntity.needSyncDFS = true
-      cacheWriterEntity.lastWriteTime = System.currentTimeMillis()
-      dataFileWriter.flush()
-      if (cacheWriterEntity.isNewFile) {
-        syncDFS(cacheWriterEntity)
-        cacheWriterEntity.isNewFile = false
+  def write(record: GenericRecord, partitionKeys: List[String], basePath: String, schema: Schema, fileBaseName: String): Unit = {
+    val targetFileName = buildFilePath(record, partitionKeys, basePath) + "/" + fileBaseName + "." + fileNameUUID + ".avro"
+    try {
+      val cacheWriterEntity = getDataFileWriter(targetFileName, schema)
+      cacheWriterEntity.synchronized {
+        val dataFileWriter = cacheWriterEntity.dataFileWriter
+        dataFileWriter.append(record)
+        cacheWriterEntity.needSyncDFS = true
+        cacheWriterEntity.lastWriteTime = System.currentTimeMillis()
+        dataFileWriter.flush()
+        if (cacheWriterEntity.isNewFile) {
+          syncDFS(cacheWriterEntity)
+          cacheWriterEntity.isNewFile = false
+        }
+      }
+    } catch {
+      case e: IOException => {
+        fileCache.remove(targetFileName)
+        logger.error(targetFileName, e)
       }
     }
 

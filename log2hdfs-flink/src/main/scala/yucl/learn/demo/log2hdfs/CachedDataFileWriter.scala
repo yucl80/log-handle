@@ -1,6 +1,6 @@
 package yucl.learn.demo.log2hdfs
 
-import java.io.{BufferedWriter, OutputStreamWriter}
+import java.io.{BufferedWriter, IOException, OutputStreamWriter}
 import java.util
 import java.util.UUID
 import java.util.concurrent._
@@ -11,25 +11,32 @@ import org.apache.hadoop.fs.{FSDataOutputStream, Path}
 import org.apache.hadoop.hdfs.DFSOutputStream
 import org.apache.hadoop.hdfs.client.HdfsDataOutputStream.SyncFlag
 import org.slf4j.{Logger, LoggerFactory}
-import yucl.learn.demo.log2hdfs.CachedWriterEntity
 
 import scala.collection.concurrent.TrieMap
 
 object CachedDataFileWriter {
   val logger: Logger = LoggerFactory.getLogger(CachedDataFileWriter.getClass)
-  val fileName: String = UUID.randomUUID().toString
+  val fileNameUUID: String = UUID.randomUUID().toString
   val conf = new Configuration()
   private val fileCache: TrieMap[String, CachedWriterEntity] = new TrieMap[String, CachedWriterEntity]
   val scheduledExecutorService: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setDaemon(true).build())
 
 
-  def write(rawLog: String, fileFullName:String): Unit = {
-    val cacheWriterEntity = getDataFileWriter(fileFullName+ "."+ fileName)
-    cacheWriterEntity.synchronized {
-      val dataFileWriter = cacheWriterEntity.dataFileWriter
-      dataFileWriter.write(rawLog+"\n")
-      cacheWriterEntity.needSyncDFS = true
-      cacheWriterEntity.lastWriteTime = System.currentTimeMillis()
+  def write(rawLog: String, fileFullName: String): Unit = {
+    val targetFileName = fileFullName + "." + fileNameUUID
+    try {
+      val cacheWriterEntity = getDataFileWriter(targetFileName)
+      cacheWriterEntity.synchronized {
+        val dataFileWriter = cacheWriterEntity.dataFileWriter
+        dataFileWriter.write(rawLog + "\n")
+        cacheWriterEntity.needSyncDFS = true
+        cacheWriterEntity.lastWriteTime = System.currentTimeMillis()
+      }
+    } catch {
+      case e: IOException => {
+        fileCache.remove(targetFileName)
+        logger.error(targetFileName, e)
+      }
     }
   }
 
@@ -54,25 +61,25 @@ object CachedDataFileWriter {
   }
 
   def syncDFS(cachedWriterEntity: CachedWriterEntity): Unit = {
-    cachedWriterEntity.synchronized {
-      if (cachedWriterEntity.needSyncDFS) {
-        cachedWriterEntity.dataFileWriter.flush()
-        val fsDataOutputStream = cachedWriterEntity.fsDataOutputStream.getWrappedStream()
-        val dFSOutputStream = fsDataOutputStream.asInstanceOf[DFSOutputStream]
-        dFSOutputStream.hsync(util.EnumSet.of(SyncFlag.UPDATE_LENGTH))
-        cachedWriterEntity.needSyncDFS = false
+    try {
+      cachedWriterEntity.synchronized {
+        if (cachedWriterEntity.needSyncDFS) {
+          cachedWriterEntity.dataFileWriter.flush()
+          val fsDataOutputStream = cachedWriterEntity.fsDataOutputStream.getWrappedStream()
+          val dFSOutputStream = fsDataOutputStream.asInstanceOf[DFSOutputStream]
+          dFSOutputStream.hsync(util.EnumSet.of(SyncFlag.UPDATE_LENGTH))
+          cachedWriterEntity.needSyncDFS = false
+        }
       }
+    }
+    catch {
+      case e: Exception => logger.error("call sync dfs failed", e)
     }
   }
 
   def syncAllDFS(): Unit = {
     for ((fileName, cachedWriterEntity) <- fileCache) {
-      try {
-        syncDFS(cachedWriterEntity)
-      }
-      catch {
-        case e: Exception => logger.error(fileName, e)
-      }
+      syncDFS(cachedWriterEntity)
     }
   }
 

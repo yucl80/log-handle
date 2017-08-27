@@ -17,8 +17,6 @@ object ConsoleLogHandler {
 
   def main(args: Array[String]) {
     val List(bootstrap, topic, consumerGroup, outputPath) = args.toList
-    //val List(bootstrap, topic, consumerGroup, outputPath) =
-    //List("10.62.14.55:9092","containerlog","test","hdfs://10.62.14.46:9000/tmp/applog1")
     val properties = new Properties
     properties.setProperty("bootstrap.servers", bootstrap)
     properties.setProperty("group.id", consumerGroup)
@@ -30,10 +28,9 @@ object ConsoleLogHandler {
     logStream.addSink(new SinkFunction[String] {
       override def invoke(msg: String): Unit = {
         try {
-          println(msg)
           val json: Map[String, Any] = JSON.parseFull(msg).get.asInstanceOf[Map[String, Any]]
           val rawMsg = json.getOrElse("message", "").asInstanceOf[String]
-          val time = JSON.parseFull(rawMsg).get.asInstanceOf[Map[String, Any]].getOrElse("time","").asInstanceOf[String]
+          val time = JSON.parseFull(rawMsg).get.asInstanceOf[Map[String, Any]].getOrElse("time", "").asInstanceOf[String]
           val matcher = dockerLogTimePattern.matcher(time)
           var date: Date = null
           if (matcher.find) {
@@ -62,12 +59,12 @@ object ConsoleLogHandler {
         }
       }
 
-      })
+    })
 
     try {
       env.execute("containerlog2hdfs")
     } catch {
-      case e: Exception =>logger.error(e.getMessage, e)
+      case e: Exception => logger.error(e.getMessage, e)
 
     }
 

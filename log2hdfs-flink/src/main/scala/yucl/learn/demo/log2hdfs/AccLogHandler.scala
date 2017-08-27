@@ -18,8 +18,7 @@ object AccLogHandler {
   def main(args: Array[String]) {
     val List(bootstrap, topic, consumerGroup, outputPath) = args.toList
     val partitionKeys = List("year", "month", "stack", "service")
-    //val List(bootstrap, topic, consumerGroup, outputPath) =
-      //List("10.62.14.66:9092", "parsed-acclog", "test", "hdfs://10.62.14.67:8020/tmp/acclog2")
+
     val properties = new Properties
     properties.setProperty("bootstrap.servers", bootstrap)
     properties.setProperty("group.id", consumerGroup)
