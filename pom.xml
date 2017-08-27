@@ -12,6 +12,7 @@
         <module>log2redis</module>
         <module>log2hdfs-spark</module>
         <module>log2hdfs-flink</module>
+        <module>acclog-analyze-flink</module>
     </modules>
     <packaging>pom</packaging>
 
