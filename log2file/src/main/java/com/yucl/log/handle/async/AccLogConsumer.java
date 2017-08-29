@@ -3,16 +3,13 @@ package com.yucl.log.handle.async;
 
 import com.jayway.jsonpath.DocumentContext;
 
+import java.util.Properties;
 import java.util.concurrent.ThreadPoolExecutor;
 
 public class AccLogConsumer extends LogConsumer {
 
-	public AccLogConsumer(String topic) {
-		super(topic);		
-	}
-
-	public AccLogConsumer(String topic, ThreadPoolExecutor threadPoolExecutor) {
-		super(topic, threadPoolExecutor);		
+	public AccLogConsumer(String topic, ThreadPoolExecutor threadPoolExecutor, Properties props) {
+		super(topic, threadPoolExecutor, props);
 	}
 
 	@Override

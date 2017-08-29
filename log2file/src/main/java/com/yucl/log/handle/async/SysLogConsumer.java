@@ -1,19 +1,18 @@
 
 package com.yucl.log.handle.async;
 
-import java.util.concurrent.ThreadPoolExecutor;
-
 import com.jayway.jsonpath.DocumentContext;
+
+import java.util.Properties;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class SysLogConsumer extends LogConsumer {	
 	
-	public SysLogConsumer(String topic, ThreadPoolExecutor threadPoolExecutor) {
-		super(topic, threadPoolExecutor);		
+	public SysLogConsumer(String topic, ThreadPoolExecutor threadPoolExecutor,Properties props) {
+		super(topic, threadPoolExecutor,  props);
 	}
 
-	public SysLogConsumer(String topic) {
-		super(topic);
-	}
+
 
 	@Override
 	public String buildFilePathFromMsg(DocumentContext msgJsonContext, String rootDir) {		

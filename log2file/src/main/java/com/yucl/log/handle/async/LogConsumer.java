@@ -27,27 +27,14 @@ public abstract class LogConsumer extends Thread {
 	private ConcurrentHashMap<String, ChannelWrapper> channels = new ConcurrentHashMap<>();
 	private ThreadPoolExecutor threadPoolExecutor;
 
-	public LogConsumer(String topic) {
-		consumer = Consumer.createJavaConsumerConnector(createConsumerConfig());
-		this.topic = topic;		
-	}
 
-	public LogConsumer(String topic, ThreadPoolExecutor threadPoolExecutor) {
-		consumer = Consumer.createJavaConsumerConnector(createConsumerConfig());
+	public LogConsumer(String topic, ThreadPoolExecutor threadPoolExecutor, Properties props) {
+		consumer = Consumer.createJavaConsumerConnector(new ConsumerConfig(props));
 		this.topic = topic;
 		this.threadPoolExecutor = threadPoolExecutor;		
 	}
 
-	private static ConsumerConfig createConsumerConfig() {
-		Properties props = new Properties();
-		props.put("zookeeper.connect", KafkaProperties.zkConnect);
-		props.put("group.id", KafkaProperties.groupId);
-		props.put("zookeeper.session.timeout.ms", "4000");
-		props.put("zookeeper.sync.time.ms", "200");
-		props.put("auto.commit.interval.ms", "1000");
-		return new ConsumerConfig(props);
 
-	}
 
 	public abstract String buildFilePathFromMsg(DocumentContext msgJsonContext, String rootDir);
 

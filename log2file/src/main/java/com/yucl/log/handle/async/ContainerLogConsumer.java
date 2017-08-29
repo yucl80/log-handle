@@ -7,19 +7,17 @@ import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Properties;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ContainerLogConsumer extends LogConsumer {
 	
-	public ContainerLogConsumer(String topic, ThreadPoolExecutor threadPoolExecutor) {
-		super(topic, threadPoolExecutor);		
+	public ContainerLogConsumer(String topic, ThreadPoolExecutor threadPoolExecutor,Properties props) {
+		super(topic, threadPoolExecutor,props );
 	}
 
-	public ContainerLogConsumer(String topic) {
-		super(topic);		
-	}
 
     Pattern dockerLogTimePattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})");
 

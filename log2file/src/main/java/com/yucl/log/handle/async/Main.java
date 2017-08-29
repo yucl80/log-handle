@@ -3,6 +3,7 @@ package com.yucl.log.handle.async;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -21,16 +22,25 @@ public class Main {
                 }
 
             });
+
+		Properties props = new Properties();
+		props.put("zookeeper.connect", args[0]);
+		props.put("group.id", args[1]);
+		props.put("zookeeper.session.timeout.ms", "4000");
+		props.put("zookeeper.sync.time.ms", "200");
+		props.put("auto.commit.interval.ms", "1000");
 			
-		LogConsumer acclogConsumer = new AccLogConsumer("acclog",pool);
+		LogConsumer acclogConsumer = new AccLogConsumer("acclog",pool,props);
 		acclogConsumer.start();
-		LogConsumer applogConsumer = new AppLogConsumer("applog",pool);
+		LogConsumer applogConsumer = new AppLogConsumer("applog",pool,props);
 		applogConsumer.start();
-		LogConsumer containerlogConsumer = new ContainerLogConsumer("containerlog",pool);
+		LogConsumer containerlogConsumer = new ContainerLogConsumer("containerlog",pool,props);
 		containerlogConsumer.start();
-		LogConsumer syslogConsumer = new SysLogConsumer("hostsyslog",pool);
+		LogConsumer syslogConsumer = new SysLogConsumer("hostsyslog",pool,props);
 		syslogConsumer.start();
 
 	}
+
+
 
 }

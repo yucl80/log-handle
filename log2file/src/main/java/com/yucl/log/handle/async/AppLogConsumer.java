@@ -3,6 +3,7 @@ package com.yucl.log.handle.async;
 import com.jayway.jsonpath.DocumentContext;
 
 import java.util.Calendar;
+import java.util.Properties;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,14 +12,10 @@ public class AppLogConsumer extends LogConsumer {
     Pattern pattern = Pattern.compile("^\\[\\d{2}/\\d{2} ");
     Pattern fullDatePattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}) ");
 
-	public AppLogConsumer(String topic, ThreadPoolExecutor threadPoolExecutor) {
-		super(topic, threadPoolExecutor);
+	public AppLogConsumer(String topic, ThreadPoolExecutor threadPoolExecutor, Properties props) {
+		super(topic, threadPoolExecutor,props );
 	}
 
-	public AppLogConsumer(String topic) {
-		super(topic);
-
-	}
 
 	@Override
 	public String buildFilePathFromMsg(DocumentContext msgJsonContext, String rootDir) {
