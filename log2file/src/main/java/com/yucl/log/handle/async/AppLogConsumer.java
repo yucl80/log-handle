@@ -24,7 +24,7 @@ public class AppLogConsumer extends LogConsumer {
 	@Override
 	public String buildFilePathFromMsg(DocumentContext msgJsonContext, String rootDir) {
 		String rawMsg = msgJsonContext.read("$.message", String.class);
-		String date ="";
+		String date =null;
 		String timestamp = msgJsonContext.read("$.@timestamp", String.class);
 		if (!timestamp.isEmpty()) {
 			Instant instant = Instant.parse(timestamp);
@@ -42,7 +42,7 @@ public class AppLogConsumer extends LogConsumer {
         }
 		String rawPath = msgJsonContext.read("$.path", String.class);
         String fileName = rawPath.substring(rawPath.lastIndexOf('/') + 1);
-        if(!fullDatePattern.matcher(fileName).find() && (!date.isEmpty())){
+        if(!fullDatePattern.matcher(fileName).find() && date!=null){
             fileName = fileName + "."+date ;
         }
         String filePath = new StringBuilder().append(rootDir).append("/app/logs/")
