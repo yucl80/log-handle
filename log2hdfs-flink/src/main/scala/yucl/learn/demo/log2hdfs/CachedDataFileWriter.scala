@@ -26,7 +26,7 @@ object CachedDataFileWriter {
     val targetFileName = fileFullName + "." + fileNameUUID
     try {
       val cacheWriterEntity = getDataFileWriter(targetFileName)
-      cacheWriterEntity.synchronized {
+      this.synchronized {
         val dataFileWriter = cacheWriterEntity.dataFileWriter
         dataFileWriter.write(rawLog + "\n")
         cacheWriterEntity.needSyncDFS = true
@@ -41,7 +41,7 @@ object CachedDataFileWriter {
   }
 
   def getDataFileWriter(fileName: String): CachedWriterEntity = {
-    fileCache.synchronized {
+    this.synchronized {
       var cacheWriterEntity: CachedWriterEntity = fileCache.getOrElse(fileName, null)
       if (cacheWriterEntity == null) {
         val filePath = new Path(fileName)
@@ -62,7 +62,7 @@ object CachedDataFileWriter {
 
   def syncDFS(cachedWriterEntity: CachedWriterEntity): Unit = {
     try {
-      cachedWriterEntity.synchronized {
+      this.synchronized {
         if (cachedWriterEntity.needSyncDFS) {
           cachedWriterEntity.dataFileWriter.flush()
           val fsDataOutputStream = cachedWriterEntity.fsDataOutputStream.getWrappedStream()

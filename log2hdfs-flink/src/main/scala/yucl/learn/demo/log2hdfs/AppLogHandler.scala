@@ -1,11 +1,13 @@
 package yucl.learn.demo.log2hdfs
 
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneOffset}
+import java.util.Properties
 import java.util.regex.Pattern
-import java.util.{Calendar, Properties}
 
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
-import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer010}
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema
 import org.slf4j.{Logger, LoggerFactory}
 
@@ -16,7 +18,6 @@ object AppLogHandler {
 
   def main(args: Array[String]) {
     val List(bootstrap, topic, consumerGroup, outputPath) = args.toList
-
     val properties = new Properties
     properties.setProperty("bootstrap.servers", bootstrap)
     properties.setProperty("group.id", consumerGroup)
@@ -24,44 +25,43 @@ object AppLogHandler {
     val kafkaConsumer = new FlinkKafkaConsumer010[String](topic, new SimpleStringSchema, properties)
     val stream = env.addSource(kafkaConsumer)
     val pattern: Pattern = Pattern.compile("^\\[\\d{2}/\\d{2} ")
-    val fullDatePattern: Pattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}) ")
+    val fullDatePattern: Pattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})")
     val logStream = stream.filter(_.nonEmpty)
     logStream.addSink(new SinkFunction[String] {
       override def invoke(msg: String): Unit = {
+        var filePath=""
         try {
           val json: Map[String, Any] = JSON.parseFull(msg).get.asInstanceOf[Map[String, Any]]
           val rawMsg = json.getOrElse("message", "").asInstanceOf[String]
-          var date = ""
-          val matcher = fullDatePattern.matcher(rawMsg)
-          if (matcher.find) date = matcher.group(1)
-          else if (pattern.matcher(rawMsg).find) {
-            val year = String.valueOf(Calendar.getInstance.get(Calendar.YEAR))
-            val eventTime = year + "-" + rawMsg.substring(1, 6)
-            date = eventTime.replaceAll("/", "-")
+          val timestamp = json.getOrElse("@timestamp", "").asInstanceOf[String]
+          if (!timestamp.isEmpty) {
+            val instant = Instant.parse(timestamp)
+            val localTime = instant.atOffset(ZoneOffset.UTC)
+            val date = localTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            val rawPath = json.getOrElse("path", "").asInstanceOf[String]
+            var fileName = rawPath.substring(rawPath.lastIndexOf('/') + 1)
+            if (!fullDatePattern.matcher(fileName).find) fileName = fileName + "." + date
+            filePath = new StringBuilder().append(outputPath).append("/")
+              .append("year=").append(localTime.getYear).append("/")
+              .append("month=").append(localTime.getMonthValue).append("/")
+              .append("stack=").append(json.getOrElse("stack", "").asInstanceOf[String]).append("/")
+              .append("service=").append(json.getOrElse("service", classOf[String])).append("/")
+              .append(json.getOrElse("service", "").asInstanceOf[String]).append("-").append(json.getOrElse("index", "").asInstanceOf[String])
+              .append(".").append(fileName).toString
+            CachedDataFileWriter.write(rawMsg, filePath)
+          }else {
+            logger.warn("@timestamp not found :"+rawMsg)
           }
-          val rawPath = json.getOrElse("path", "").asInstanceOf[String]
-          var fileName = rawPath.substring(rawPath.lastIndexOf('/') + 1)
-          if (!fullDatePattern.matcher(fileName).find) fileName = fileName + "." + date
-          val filePath = new StringBuilder().append(outputPath).append("/")
-            .append("year=").append(date.substring(0, 4)).append("/")
-            .append("month=").append(date.substring(5, 7).toInt).append("/")
-            .append("stack=").append(json.getOrElse("stack", "").asInstanceOf[String]).append("/")
-            .append("service=").append(json.getOrElse("service", classOf[String])).append("/")
-            .append(json.getOrElse("service", "").asInstanceOf[String]).append("-").append(json.getOrElse("index", "").asInstanceOf[String])
-            .append(".").append(fileName).toString
-          CachedDataFileWriter.write(rawMsg, filePath)
         } catch {
-          case t: Throwable => logger.error(msg, t)
+          case t: Throwable => logger.error(filePath + ": "+msg, t)
         }
       }
     })
     try {
       env.execute("applog2hdfs")
     } catch {
-      case e: Exception =>logger.error(e.getMessage, e)
+      case e: Exception => logger.error(e.getMessage, e)
 
     }
-
   }
-
 }
