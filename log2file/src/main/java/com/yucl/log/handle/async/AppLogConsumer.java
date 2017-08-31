@@ -2,6 +2,10 @@ package com.yucl.log.handle.async;
 
 import com.jayway.jsonpath.DocumentContext;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Properties;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -21,17 +25,24 @@ public class AppLogConsumer extends LogConsumer {
 	public String buildFilePathFromMsg(DocumentContext msgJsonContext, String rootDir) {
 		String rawMsg = msgJsonContext.read("$.message", String.class);
 		String date ="";
-		Matcher matcher = fullDatePattern.matcher(rawMsg);
-        if(matcher.find()){
-            date = matcher.group(1);
-        } else if (pattern.matcher(rawMsg).find()){
-            String year = String.valueOf(Calendar.getInstance().get(Calendar.YEAR));
-            String eventTime = year+"-"+rawMsg.substring(1,6);
-            date = eventTime.replaceAll("/","-");
-		}
+		String timestamp = msgJsonContext.read("$.@timestamp", String.class);
+		if (!timestamp.isEmpty()) {
+			Instant instant = Instant.parse(timestamp);
+			OffsetDateTime localTime = instant.atOffset(ZoneOffset.UTC);
+			date = localTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+		}else {
+            Matcher matcher = fullDatePattern.matcher(rawMsg);
+            if(matcher.find()){
+                date = matcher.group(1);
+            } else if (pattern.matcher(rawMsg).find()){
+                String year = String.valueOf(Calendar.getInstance().get(Calendar.YEAR));
+                String eventTime = year+"-"+rawMsg.substring(1,6);
+                date = eventTime.replaceAll("/","-");
+            }
+        }
 		String rawPath = msgJsonContext.read("$.path", String.class);
         String fileName = rawPath.substring(rawPath.lastIndexOf('/') + 1);
-        if(!fullDatePattern.matcher(fileName).find()){
+        if(!fullDatePattern.matcher(fileName).find() && (!date.isEmpty())){
             fileName = fileName + "."+date ;
         }
         String filePath = new StringBuilder().append(rootDir).append("/app/logs/")
