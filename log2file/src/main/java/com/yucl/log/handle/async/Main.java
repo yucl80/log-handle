@@ -34,6 +34,8 @@ public class Main {
 		acclogConsumer.start();
 		LogConsumer applogConsumer = new AppLogConsumer("applog",pool,props);
 		applogConsumer.start();
+		LogConsumer GCConsumer = new AppLogConsumer("gclog",pool,props);
+		applogConsumer.start();
 		LogConsumer containerlogConsumer = new ContainerLogConsumer("containerlog",pool,props);
 		containerlogConsumer.start();
 		LogConsumer syslogConsumer = new SysLogConsumer("hostsyslog",pool,props);

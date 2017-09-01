@@ -15,7 +15,8 @@ public class SysLogConsumer extends LogConsumer {
 
 
 	@Override
-	public String buildFilePathFromMsg(DocumentContext msgJsonContext, String rootDir) {		
-		return rootDir + "/app/logs"+msgJsonContext.read("$.path", String.class);
+	public String buildFilePathFromMsg(DocumentContext msgJsonContext, String rootDir) {
+		String host = msgJsonContext.read("$.host", String.class);
+		return rootDir + "/app/logs/hosts/"+host+msgJsonContext.read("$.path", String.class);
 	}
 }
