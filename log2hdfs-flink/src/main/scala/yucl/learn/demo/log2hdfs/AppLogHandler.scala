@@ -1,7 +1,7 @@
 package yucl.learn.demo.log2hdfs
 
 import java.time.format.DateTimeFormatter
-import java.time.{Instant, ZoneOffset}
+import java.time.{Instant, ZoneId}
 import java.util.Properties
 import java.util.regex.Pattern
 
@@ -36,7 +36,7 @@ object AppLogHandler {
           val timestamp = json.getOrElse("@timestamp", "").asInstanceOf[String]
           if (!timestamp.isEmpty) {
             val instant = Instant.parse(timestamp)
-            val localTime = instant.atOffset(ZoneOffset.UTC)
+            val localTime = instant.atZone(ZoneId.of("Asia/Shanghai"))
             val date = localTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
             val rawPath = json.getOrElse("path", "").asInstanceOf[String]
             var fileName = rawPath.substring(rawPath.lastIndexOf('/') + 1)

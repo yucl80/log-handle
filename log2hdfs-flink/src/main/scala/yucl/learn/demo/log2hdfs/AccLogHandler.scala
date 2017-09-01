@@ -1,6 +1,6 @@
 package yucl.learn.demo.log2hdfs
 
-import java.time.{Instant, ZoneOffset}
+import java.time.{Instant, ZoneId}
 import java.util.Properties
 
 import org.apache.avro.Schema
@@ -44,7 +44,7 @@ object AccLogHandler {
         }
         val record: GenericRecord = new GenericData.Record(schema)
         val instant = Instant.parse(log.getOrElse("@timestamp", "").asInstanceOf[String])
-        val localTime = instant.atOffset(ZoneOffset.UTC)
+        val localTime = instant.atZone(ZoneId.of("Asia/Shanghai"))
         val path = log.getOrElse("path","").asInstanceOf[String]
         val fileBaseName = new StringBuilder().append(log.getOrElse("service","").asInstanceOf[String]).append("-")
             .append(log.getOrElse("index","").asInstanceOf[String]).append(".")
