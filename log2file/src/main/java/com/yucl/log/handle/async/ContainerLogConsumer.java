@@ -53,6 +53,7 @@ public class ContainerLogConsumer extends LogConsumer {
 	        String containerName = msgJsonContext.read("$.name", String.class);
             filePath = new StringBuilder().append(rootDir).append("/app/logs/")
                     .append("others/")
+                    .append(msgJsonContext.read("$.host",String.class)).append("/")
                     .append(containerName)
                     .append(".").append(new SimpleDateFormat("yyyy-MM-dd").format(date))
                     .append(".out")
