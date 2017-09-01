@@ -3,8 +3,8 @@ package com.yucl.log.handle.async;
 import com.jayway.jsonpath.DocumentContext;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Properties;
@@ -28,7 +28,7 @@ public class AppLogConsumer extends LogConsumer {
 		String timestamp = msgJsonContext.read("$.@timestamp", String.class);
 		if (!timestamp.isEmpty()) {
 			Instant instant = Instant.parse(timestamp);
-			OffsetDateTime localTime = instant.atOffset(ZoneOffset.UTC);
+			ZonedDateTime localTime = instant.atZone(ZoneId.of("Asia/Shanghai"));
 			date = localTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 		}else {
             Matcher matcher = fullDatePattern.matcher(rawMsg);
