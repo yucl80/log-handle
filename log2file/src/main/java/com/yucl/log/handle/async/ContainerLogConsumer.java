@@ -50,7 +50,7 @@ public class ContainerLogConsumer extends LogConsumer {
                     .append(new SimpleDateFormat("yyyy-MM-dd").format(date))
                     .toString();
         } else {
-	        String containerName = msgJsonContext.read("$.Name", String.class);
+	        String containerName = msgJsonContext.read("$.name", String.class);
             filePath = new StringBuilder().append(rootDir).append("/app/logs/")
                     .append("others/")
                     .append(containerName)
