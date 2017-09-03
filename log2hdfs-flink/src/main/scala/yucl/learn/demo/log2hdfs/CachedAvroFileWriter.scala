@@ -27,9 +27,10 @@ object CachedAvroFileWriter {
   val scheduledExecutorService: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setDaemon(true).build())
   var schema: Schema = null
 
-  def write(record: GenericRecord, partitionKeys: List[String], basePath: String, schema: Schema, fileBaseName: String): Unit = {
-    val targetFileName = buildFilePath(record, partitionKeys, basePath) + "/" + fileBaseName + "." + fileNameUUID + ".avro"
+  def write(record: GenericRecord, partitionKeys: List[String], basePath: String, fileBaseName: String): Unit = {
+    var targetFileName :String = null
     try {
+      targetFileName = buildFilePath(record, partitionKeys, basePath) + "/" + fileBaseName + "." + fileNameUUID + ".avro"
       val cacheWriterEntity = getDataFileWriter(targetFileName, schema)
       cacheWriterEntity.synchronized {
         val dataFileWriter = cacheWriterEntity.dataFileWriter
