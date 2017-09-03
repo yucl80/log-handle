@@ -68,7 +68,7 @@ object ConsoleLogHandler {
 
     logStream.addSink((value: (String, String)) => CachedDataFileWriter.write(value._1, value._2))
       .name("write:" + outputPath)
-    logStream.print()
+
     try {
       env.execute("containerlog2hdfs")
     } catch {
