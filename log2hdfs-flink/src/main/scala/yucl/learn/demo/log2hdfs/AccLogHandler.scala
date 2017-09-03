@@ -17,8 +17,7 @@ object AccLogHandler {
   val logger: Logger = LoggerFactory.getLogger(AccLogHandler.getClass)
 
   def main(args: Array[String]) {
-    val List(bootstrap, topic, consumerGroup, outputPath) = //args.toList
-      List("10.62.14.49:9092,10.62.14.54:9092,10.62.14.66:9092", "parsed-acclog", "test", "hdfs://10.62.14.67:8020/tmp/acclog2")
+    val List(bootstrap, topic, consumerGroup, outputPath) = args.toList
     val partitionKeys = List("year", "month", "stack", "service")
     val properties = new Properties
     properties.setProperty("bootstrap.servers", bootstrap)
