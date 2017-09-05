@@ -21,7 +21,6 @@ import scala.collection.concurrent.TrieMap
 
 object CachedAvroFileWriter {
   val logger: Logger = LoggerFactory.getLogger(CachedAvroFileWriter.getClass)
-  val fileNameUUID: String = UUID.randomUUID().toString
   val conf = new Configuration()
   private val fileCache: TrieMap[String, CachedAvroWriterEntity] = new TrieMap[String, CachedAvroWriterEntity]
   val scheduledExecutorService: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setDaemon(true).build())
@@ -30,7 +29,7 @@ object CachedAvroFileWriter {
   def write(record: GenericRecord, partitionKeys: List[String], basePath: String, fileBaseName: String): Unit = {
     var targetFileName :String = null
     try {
-      targetFileName = buildFilePath(record, partitionKeys, basePath) + "/" + fileBaseName + "." + fileNameUUID + ".avro"
+      targetFileName = buildFilePath(record, partitionKeys, basePath) + "/" + fileBaseName
       val cacheWriterEntity = getDataFileWriter(targetFileName, schema)
       cacheWriterEntity.synchronized {
         val dataFileWriter = cacheWriterEntity.dataFileWriter
@@ -64,7 +63,7 @@ object CachedAvroFileWriter {
       var cacheWriterEntity: CachedAvroWriterEntity = fileCache.getOrElse(fileName, null)
       var dfw: DataFileWriter[GenericRecord] = null
       if (cacheWriterEntity == null) {
-        val filePath = new Path(fileName)
+        val filePath = new Path(fileName +  "." + UUID.randomUUID().toString + ".avro")
         val fileSystem = filePath.getFileSystem(conf)
         val datumWriter = new SpecificDatumWriter[GenericRecord](schema)
         val dataFileWriter = new DataFileWriter[GenericRecord](datumWriter)
@@ -80,7 +79,6 @@ object CachedAvroFileWriter {
         }
         //dfw.setFlushOnEveryBlock(true)
         //dfw.setSyncInterval(1024)
-
         cacheWriterEntity = new CachedAvroWriterEntity(dfw, fsDataOutputStream)
         fileCache.put(fileName, cacheWriterEntity)
       }
@@ -106,7 +104,10 @@ object CachedAvroFileWriter {
         syncDFS(cachedWriterEntity)
       }
       catch {
-        case e: Exception => logger.error(fileName, e)
+        case e: Exception => {
+          fileCache.remove(fileName)
+          logger.error(fileName, e)
+        }
       }
     }
   }
@@ -119,7 +120,7 @@ object CachedAvroFileWriter {
 
   def closeTimeoutFiles(): Unit = {
     for ((fileName, cachedWriterEntity) <- fileCache) {
-      if (System.currentTimeMillis() - cachedWriterEntity.lastWriteTime > 5 * 24 * 60 * 60 * 1000) {
+      if (System.currentTimeMillis() - cachedWriterEntity.lastWriteTime >  60 * 60 * 1000) {
         try {
           fileCache.remove(fileName)
           syncDFS(cachedWriterEntity)
@@ -138,10 +139,10 @@ object CachedAvroFileWriter {
     override def run() = {
       closeTimeoutFiles()
     }
-  }, 5, 5, TimeUnit.DAYS)
+  }, 59, 59, TimeUnit.MINUTES)
 
   def closeAllFiles(): Unit = {
-    logger.info("close files")
+    logger.info("app is stopping, close all files")
     for ((fileName, cachedWriterEntity) <- fileCache) {
       try {
         fileCache.remove(fileName)

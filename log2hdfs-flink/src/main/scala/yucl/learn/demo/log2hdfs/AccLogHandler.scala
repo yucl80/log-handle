@@ -106,7 +106,7 @@ object AccLogHandler {
       .filter(_ != None)
       .map(_.get)
 
-    accLogs.addSink((value: (GenericRecord,  String)) => CachedAvroFileWriter.write(value._1, partitionKeys, outputPath,  value._2))
+    accLogs.addSink(new  AvroFileWriteSink(partitionKeys,outputPath))
       .name("write:" + outputPath)
 
     try {

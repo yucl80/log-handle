@@ -50,7 +50,7 @@ object AppLogHandler {
                 .append(".").append(fileName).toString
               result = Some((rawMsg, filePath))
             }else {
-              logger.warn("@timestamp msg failed:" + msg)
+              logger.warn("@timestamp not found:" + msg)
             }
           } else {
             logger.warn("parse msg failed:" + msg)
@@ -63,14 +63,12 @@ object AppLogHandler {
       .filter(_ != None)
       .map(_.get)
 
-    logStream.addSink((value: (String, String)) => CachedDataFileWriter.write(value._1, value._2))
-      .name("write:" + outputPath)
+    logStream.addSink(new CachedHdfsWriterSink()).name("write:" + outputPath)
 
     try {
       env.execute(topic+"2hdfs")
     } catch {
       case e: Exception => logger.error(e.getMessage, e)
-
     }
   }
 }
