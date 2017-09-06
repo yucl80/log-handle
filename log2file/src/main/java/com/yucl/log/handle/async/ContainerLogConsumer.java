@@ -4,13 +4,14 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 
 import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Properties;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class ContainerLogConsumer extends LogConsumer {
 	
@@ -18,27 +19,17 @@ public class ContainerLogConsumer extends LogConsumer {
 		super(topic, threadPoolExecutor,props );
 	}
 
-
-    Pattern dockerLogTimePattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})");
-
 	@Override
 	public String buildFilePathFromMsg(DocumentContext msgJsonContext, String rootDir) {
         String filePath ;
-        String rawMsg = msgJsonContext.read("$.message",String.class);
-        DocumentContext jsonContext = JsonPath.parse(rawMsg);
-        String time = jsonContext.read("$.time", String.class);
-        Matcher matcher = dockerLogTimePattern.matcher(time);
-        Date date = null;
-        if(matcher.find()){
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss z");
-            try {
-                 date = sdf.parse(matcher.group(1)+" UTC");
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        if ( date == null){
-            date = new Date();
+        String date =null;
+        String timestamp = msgJsonContext.read("$.@timestamp", String.class);
+        if (!timestamp.isEmpty()) {
+            Instant instant = Instant.parse(timestamp);
+            ZonedDateTime localTime = instant.atZone(ZoneId.of("Asia/Shanghai"));
+            date = localTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        } else {
+            date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         }
 	    if(! msgJsonContext.read("$.stack", String.class).isEmpty() ){
              filePath = new StringBuilder().append(rootDir).append("/app/logs/")
@@ -47,7 +38,7 @@ public class ContainerLogConsumer extends LogConsumer {
                     .append(msgJsonContext.read("$.service", String.class)).append("-")
                     .append(msgJsonContext.read("$.index", String.class)).append(".")
                     .append("console.out").append(".")
-                    .append(new SimpleDateFormat("yyyy-MM-dd").format(date))
+                    .append(date)
                     .toString();
         } else {
 	        String containerName = msgJsonContext.read("$.name", String.class);
@@ -55,18 +46,17 @@ public class ContainerLogConsumer extends LogConsumer {
                     .append("others/")
                     .append(msgJsonContext.read("$.host",String.class)).append("/")
                     .append(containerName)
-                    .append(".").append(new SimpleDateFormat("yyyy-MM-dd").format(date))
+                    .append(".").append(date)
                     .append(".out")
                     .toString();
         }
-
 		return filePath;
 	}
 
 	@Override
 	public byte[] getBytesToWrite(String rawMsg) {
 		DocumentContext jsonContext = JsonPath.parse(rawMsg);
-		String log = jsonContext.read("$.log",String.class);
+		String log = jsonContext.read("$.message",String.class);
 		byte[] bytes = new byte[0];
 		try {
 			bytes =log.getBytes("UTF-8");
