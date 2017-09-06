@@ -1,7 +1,6 @@
 package com.yucl.log.handle.async;
 
 import com.jayway.jsonpath.DocumentContext;
-import com.jayway.jsonpath.JsonPath;
 
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
@@ -55,11 +54,9 @@ public class ContainerLogConsumer extends LogConsumer {
 
 	@Override
 	public byte[] getBytesToWrite(String rawMsg) {
-		DocumentContext jsonContext = JsonPath.parse(rawMsg);
-		String log = jsonContext.read("$.message",String.class);
 		byte[] bytes = new byte[0];
 		try {
-			bytes =log.getBytes("UTF-8");
+			bytes =rawMsg.getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e) {
 
 		}
