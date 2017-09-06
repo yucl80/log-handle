@@ -1,8 +1,9 @@
 package yucl.learn.demo.log2hdfs
 
-import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId}
+import java.util.Properties
 import java.util.regex.Pattern
-import java.util.{Date, Properties}
 
 import org.apache.flink.streaming.api.scala.{StreamExecutionEnvironment, _}
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010
@@ -16,10 +17,12 @@ object ConsoleLogHandler {
 
   def main(args: Array[String]) {
     val List(bootstrap, topic, consumerGroup, outputPath) = args.toList
+
     val properties = new Properties
     properties.setProperty("bootstrap.servers", bootstrap)
     properties.setProperty("group.id", consumerGroup)
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+    env.enableCheckpointing(60000)
     val kafkaConsumer = new FlinkKafkaConsumer010[String](topic, new SimpleStringSchema, properties)
     val stream = env.addSource(kafkaConsumer).name(bootstrap + "/" + topic + ":" + consumerGroup)
     val dockerLogTimePattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})")
@@ -30,18 +33,12 @@ object ConsoleLogHandler {
           val parseResult = JSON.parseFull(msg)
           if (parseResult != None) {
             val json = parseResult.get.asInstanceOf[Map[String, Any]]
-            val rawMsg = json.getOrElse("message", "").asInstanceOf[String]
-            val rawMsgParseResult = JSON.parseFull(rawMsg)
-            if (rawMsgParseResult != None) {
-              val time = rawMsgParseResult.get.asInstanceOf[Map[String, Any]].getOrElse("time", "").asInstanceOf[String]
-              val matcher = dockerLogTimePattern.matcher(time)
-              var date: Date = null
-              if (matcher.find) {
-                val sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss z")
-                date = sdf.parse(matcher.group(1) + " UTC")
-              }
-              if (date == null) date = new Date
-              val dateStr = new SimpleDateFormat("yyyy-MM-dd").format(date)
+            val timestamp = json.get("@timestamp")
+            val rawMsg = json.getOrElse("message","").asInstanceOf[String]
+            if (timestamp != None) {
+              val instant = Instant.parse(timestamp.get.asInstanceOf[String])
+              val localTime = instant.atZone(ZoneId.of("Asia/Shanghai"))
+              val dateStr = localTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
               if (!json.getOrElse("stack", "").asInstanceOf[String].isEmpty) {
                 val filePath = new StringBuilder().append(outputPath).append("/")
                   .append("year=").append(dateStr.substring(0, 4)).append("/")
@@ -53,7 +50,7 @@ object ConsoleLogHandler {
                 result = Some((rawMsg, filePath))
               }
             } else {
-              logger.warn("parse raw msg failed:" + msg)
+              logger.warn("@timestamp not found:" + msg)
             }
           } else {
             logger.warn("parse msg failed:" + msg)

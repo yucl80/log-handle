@@ -25,9 +25,10 @@ object CachedAvroFileWriter {
   private val fileCache: TrieMap[String, CachedAvroWriterEntity] = new TrieMap[String, CachedAvroWriterEntity]
   val scheduledExecutorService: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setDaemon(true).build())
   var schema: Schema = null
+  val FILE_TIMEOUT = 60 * 60 * 1000
 
   def write(record: GenericRecord, partitionKeys: List[String], basePath: String, fileBaseName: String): Unit = {
-    var targetFileName :String = null
+    var targetFileName: String = null
     try {
       targetFileName = buildFilePath(record, partitionKeys, basePath) + "/" + fileBaseName
       val cacheWriterEntity = getDataFileWriter(targetFileName, schema)
@@ -44,11 +45,16 @@ object CachedAvroFileWriter {
       }
     } catch {
       case e: IOException => {
-        fileCache.remove(targetFileName)
+        removeCachedFile(targetFileName)
         logger.error(targetFileName, e)
       }
     }
+  }
 
+  def removeCachedFile(targetFileName: String): Unit = {
+    fileCache.synchronized {
+      fileCache.remove(targetFileName)
+    }
   }
 
   def buildFilePath(record: GenericRecord, partitionKeys: List[String], basePath: String): String = {
@@ -63,7 +69,7 @@ object CachedAvroFileWriter {
       var cacheWriterEntity: CachedAvroWriterEntity = fileCache.getOrElse(fileName, null)
       var dfw: DataFileWriter[GenericRecord] = null
       if (cacheWriterEntity == null) {
-        val filePath = new Path(fileName +  "." + UUID.randomUUID().toString + ".avro")
+        val filePath = new Path(fileName + "." + UUID.randomUUID().toString + ".avro")
         val fileSystem = filePath.getFileSystem(conf)
         val datumWriter = new SpecificDatumWriter[GenericRecord](schema)
         val dataFileWriter = new DataFileWriter[GenericRecord](datumWriter)
@@ -98,16 +104,49 @@ object CachedAvroFileWriter {
     }
   }
 
+  def closeFile(cachedWriterEntity: CachedAvroWriterEntity): Unit = {
+    cachedWriterEntity.synchronized {
+      syncDFS(cachedWriterEntity)
+      cachedWriterEntity.dataFileWriter.close()
+      cachedWriterEntity.fsDataOutputStream.close()
+    }
+  }
+
   def syncAllDFS(): Unit = {
     for ((fileName, cachedWriterEntity) <- fileCache) {
       try {
         syncDFS(cachedWriterEntity)
-      }
-      catch {
+      } catch {
         case e: Exception => {
-          fileCache.remove(fileName)
+          removeCachedFile(fileName)
           logger.error(fileName, e)
         }
+      }
+    }
+  }
+
+  def closeTimeoutFiles(): Unit = {
+    for ((fileName, cachedWriterEntity) <- fileCache) {
+      if (System.currentTimeMillis() - cachedWriterEntity.lastWriteTime > FILE_TIMEOUT) {
+        try {
+          removeCachedFile(fileName)
+          closeFile(cachedWriterEntity)
+        } catch {
+          case e: Exception => logger.error(fileName, e)
+        }
+      }
+    }
+  }
+
+
+  def closeAllFiles(): Unit = {
+    logger.info("app is stopping, close all files")
+    for ((fileName, cachedWriterEntity) <- fileCache) {
+      try {
+        removeCachedFile(fileName)
+        closeFile(cachedWriterEntity)
+      } catch {
+        case e: Exception => logger.error(fileName, e)
       }
     }
   }
@@ -118,44 +157,10 @@ object CachedAvroFileWriter {
     }
   }, 30, 30, TimeUnit.SECONDS)
 
-  def closeTimeoutFiles(): Unit = {
-    for ((fileName, cachedWriterEntity) <- fileCache) {
-      if (System.currentTimeMillis() - cachedWriterEntity.lastWriteTime >  60 * 60 * 1000) {
-        try {
-          fileCache.remove(fileName)
-          syncDFS(cachedWriterEntity)
-          cachedWriterEntity.dataFileWriter.close()
-          cachedWriterEntity.fsDataOutputStream.close()
-          logger.info(fileName + " remove from writer cache")
-        } catch {
-          case e: Exception => logger.error(fileName, e)
-        }
-      }
-    }
-  }
-
-
   scheduledExecutorService.scheduleWithFixedDelay(new Runnable {
     override def run() = {
       closeTimeoutFiles()
     }
-  }, 59, 59, TimeUnit.MINUTES)
-
-  def closeAllFiles(): Unit = {
-    logger.info("app is stopping, close all files")
-    for ((fileName, cachedWriterEntity) <- fileCache) {
-      try {
-        fileCache.remove(fileName)
-        syncDFS(cachedWriterEntity)
-        if (cachedWriterEntity.needSyncDFS) {
-          cachedWriterEntity.dataFileWriter.close()
-          cachedWriterEntity.fsDataOutputStream.close()
-        }
-        logger.info(fileName + " remove from writer cache")
-      } catch {
-        case e: Exception => logger.error(fileName, e)
-      }
-    }
-  }
+  }, 60, 60, TimeUnit.MINUTES)
 
 }

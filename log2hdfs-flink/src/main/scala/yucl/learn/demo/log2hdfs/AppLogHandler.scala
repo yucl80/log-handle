@@ -17,10 +17,12 @@ object AppLogHandler {
 
   def main(args: Array[String]) {
     val List(bootstrap, topic, consumerGroup, outputPath) = args.toList
+
     val properties = new Properties
     properties.setProperty("bootstrap.servers", bootstrap)
     properties.setProperty("group.id", consumerGroup)
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
+    env.enableCheckpointing(60000)
     val kafkaConsumer = new FlinkKafkaConsumer010[String](topic, new SimpleStringSchema, properties)
     val stream = env.addSource(kafkaConsumer).name(bootstrap + "/" + topic + ":" + consumerGroup)
     val fullDatePattern: Pattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})")
@@ -33,9 +35,9 @@ object AppLogHandler {
           if (parseResult != None) {
             val json = parseResult.get.asInstanceOf[Map[String, Any]]
             val rawMsg = json.getOrElse("message", "").asInstanceOf[String]
-            val timestamp = json.getOrElse("@timestamp", "").asInstanceOf[String]
-            if (!timestamp.isEmpty) {
-              val instant = Instant.parse(timestamp)
+            val timestamp = json.get("@timestamp")
+            if (timestamp != None) {
+              val instant = Instant.parse(timestamp.get.asInstanceOf[String])
               val localTime = instant.atZone(ZoneId.of("Asia/Shanghai"))
               val date = localTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
               val rawPath = json.getOrElse("path", "").asInstanceOf[String]
