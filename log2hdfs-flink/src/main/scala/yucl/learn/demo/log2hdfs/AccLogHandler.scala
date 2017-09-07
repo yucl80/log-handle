@@ -18,13 +18,12 @@ object AccLogHandler {
 
   def main(args: Array[String]) {
     val List(bootstrap, topic, consumerGroup, outputPath) = args.toList
-
     val partitionKeys = List("year", "month", "stack", "service")
     val properties = new Properties
     properties.setProperty("bootstrap.servers", bootstrap)
     properties.setProperty("group.id", consumerGroup)
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
-    env.enableCheckpointing(60000)
+    //env.enableCheckpointing(60000)
     val kafkaConsumer = new FlinkKafkaConsumer010[String](topic, new SimpleStringSchema, properties)
     val stream = env.addSource(kafkaConsumer).name(bootstrap + "/" + topic + ":" + consumerGroup)
     val fields = List("service", "instance", "@timestamp", "uri", "query", "time", "bytes", "response", "verb", "path", "sessionid", "auth", "agent", "host", "ip", "clientip", "xforwardedfor", "thread", "uidcookie", "referrer", "message", "stack")
@@ -109,6 +108,7 @@ object AccLogHandler {
 
     accLogs.addSink(new  AvroFileWriteSink(partitionKeys,outputPath))
       .name("write:" + outputPath)
+
 
     try {
       env.execute("acclog2hdfs")

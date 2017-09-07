@@ -17,12 +17,11 @@ object ConsoleLogHandler {
 
   def main(args: Array[String]) {
     val List(bootstrap, topic, consumerGroup, outputPath) = args.toList
-
     val properties = new Properties
     properties.setProperty("bootstrap.servers", bootstrap)
     properties.setProperty("group.id", consumerGroup)
     val env: StreamExecutionEnvironment = StreamExecutionEnvironment.getExecutionEnvironment
-    env.enableCheckpointing(60000)
+    //env.enableCheckpointing(60000)
     val kafkaConsumer = new FlinkKafkaConsumer010[String](topic, new SimpleStringSchema, properties)
     val stream = env.addSource(kafkaConsumer).name(bootstrap + "/" + topic + ":" + consumerGroup)
     val dockerLogTimePattern = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2})")
